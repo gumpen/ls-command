@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/user"
+	"path"
 	"strconv"
 	"strings"
 	"syscall"
@@ -63,7 +64,23 @@ func main() {
 			byteSize := file.Size()
 			timeStamp := file.ModTime().Format("Jan 2 15:04")
 
-			fmt.Println(permission + " " + strconv.Itoa(int(nlink)) + " " + ownerName + " " + groupName + " " + strconv.Itoa(int(byteSize)) + " " + timeStamp + " " + file.Name())
+			fileName := file.Name()
+			if file.Mode()&os.ModeSymlink == os.ModeSymlink {
+				realPath, err := os.Readlink(path.Join(dirname, file.Name()))
+				if err != nil {
+					panic(err)
+				}
+				fileName = fileName + " -> " + realPath
+			}
+
+			if file.IsDir() {
+				fileName = fmt.Sprintf("\x1b[34m%s\x1b[0m", fileName)
+				if err != nil {
+					panic(err)
+				}
+			}
+
+			fmt.Println(permission + " " + strconv.Itoa(int(nlink)) + " " + ownerName + " " + groupName + " " + strconv.Itoa(int(byteSize)) + " " + timeStamp + " " + fileName)
 
 		} else {
 			fmt.Println(file.Name())
